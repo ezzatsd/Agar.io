@@ -9,18 +9,26 @@ type Player = {
   x: number;
   y: number;
   color: string | void;
+  size: number;
+};
+
+type Food = {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
 };
 
 const Agar = () => {
+
   const [players, setPlayers] = useState<Player[]>([]);
+  const [food, setfood] = useState<Food[]>([]);
   const meRef = useRef<Player | null>(null);
   const refs = useRef(new Map());
 
   const setRef = (id: string, el: HTMLDivElement | null) => {
     refs.current.set(id, el);
   };
-
-  console.log(players);
 
   const draw = useCallback(() => {
     players.forEach((p) => {
@@ -31,6 +39,16 @@ const Agar = () => {
       }
     });
   }, [players]);
+
+  useEffect(() => {
+    socket.on("food-update", (data) => {
+      setfood(data.food); 
+    });
+  
+    return () => {
+      socket.off("food-update");
+    };
+  }, []);
 
   useEffect(() => {
     socket.on("new-player", (data) => {
@@ -62,6 +80,24 @@ const Agar = () => {
     });
     return () => {
       socket.off("register-ok");
+    };
+  }, []);
+
+  useEffect(() => { // Quand le joueur mange une nourriture il gagne de la taille
+    socket.on("player-size-update", (data) => {
+      console.log("Player size updated:", data);
+      setPlayers((prev) => {
+        return prev.map((p) => {
+          if (p.id === data.id) {
+            return { ...p, size: data.size };
+          }
+          return p;
+        });
+      });
+    });
+  
+    return () => {
+      socket.off("player-size-update");
     };
   }, []);
 
@@ -117,16 +153,34 @@ const Agar = () => {
         return (
           <div
             className={clsx(
-              `transition-all duration-1000 absolute w-[30px] h-[30px] rounded-[15px]`
+              `transition-all duration-1000 absolute w-[30px] h-[30px] rounded-[50px] flex items-center justify-center`
             )}
-            style={{ backgroundColor: p.color ?? "" }}
+            style={{
+              backgroundColor: p.color ?? "",
+              top: `${p.y}px`,
+              left: `${p.x}px`,
+              width: `${30+(p.size*5)}px`,  
+              height: `${30+(p.size*5)}px`,
+            }}
             ref={(el) => setRef(p.id, el)}
             key={p.id}
-          ></div>
+          >{p.size}</div>
         );
       })}
+      {food.map((food) => ( // Afficher la nourriture sur l'écran 
+        <div
+          key={food.id}
+          className="absolute w-[15px] h-[15px] rounded-[7.5px]"
+          style={{
+            backgroundColor: food.color,
+            top: `${food.y}px`,
+            left: `${food.x}px`,
+          }}
+        >  </div>
+      ))}
     </div>
   );
+  
 };
 
 export default Agar;
