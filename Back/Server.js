@@ -46,6 +46,14 @@ const isCollision = (xfood, yfood, xplayer, yplayer, size = 15) => { //Vérifier
     return Math.sqrt(dx * dx + dy * dy) < size; 
 };
 
+const isPlayerCollision = (player1, player2) => { //Vérifier s'il y a une collision entre deux joueurs
+  const dx = player1.x - player2.x;
+  const dy = player1.y - player2.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  return distance < (30 + player1.size * 6) / 2; 
+};
+
 io.on("connection", (socket) => {
     console.log("Un utilisateur est connecté :", socket.id);
 
@@ -68,29 +76,60 @@ io.on("connection", (socket) => {
     });
 
     socket.on("move", (player) => {
-        
-        food.forEach((foods, index) => {
-
-          if (isCollision(player.x, player.y, foods.x, foods.y)) {
-            let p = [...players].find(p => p.id === socket.id);
-        if (p) {
-            p.size += 1;
-            players.delete(p);
-            players.add(p);
-        }
-
-                food.splice(index, 1); 
-                io.emit("food-update", { food: food }); 
-                io.emit("player-size-update", { id: socket.id, size: p.size });
-            }
-        });
-        
-        socket.broadcast.emit("ennemy-move", {
-            id: socket.id,
-            x: player.x,
-            y: player.y,
-        });
-    });
+      const currentPlayer = [...players].find((p) => p.id === socket.id);
+  
+      if (currentPlayer) {
+          // Met à jour les coordonnées du joueur
+          currentPlayer.x = player.x;
+          currentPlayer.y = player.y;
+  
+          // Vérifie la collision avec la nourriture
+          food.forEach((foodItem, index) => {
+              if (isCollision(currentPlayer.x, currentPlayer.y, foodItem.x, foodItem.y)) {
+                  // Augmente la taille du joueur
+                  currentPlayer.size += 1;
+  
+                  // Supprime la nourriture mangée
+                  food.splice(index, 1);
+  
+                  // Émet les mises à jour
+                  io.emit("food-update", { food }); // Mets à jour la nourriture côté client
+                  io.emit("player-size-update", { id: currentPlayer.id, size: currentPlayer.size }); // Mets à jour la taille du joueur
+              }
+          });
+  
+          // Vérifie les collisions avec d'autres joueurs
+          [...players].forEach((otherPlayer) => {
+              if (otherPlayer.id !== currentPlayer.id && isPlayerCollision(currentPlayer, otherPlayer)) {
+                console.log("il y a une collision");
+                  if (currentPlayer.size > otherPlayer.size) {
+                      // Le joueur le plus gros mange le joueur plus petit
+                      currentPlayer.size += otherPlayer.size;
+                      players.delete(otherPlayer);
+  
+                      // Informe les clients qu'un joueur a été mangé
+                      io.emit("player-eaten", {
+                          eaterId: currentPlayer.id,
+                          eatenId: otherPlayer.id,
+                          newSize: currentPlayer.size,
+                      });
+                  }
+              }
+          });
+  
+          // Mets à jour les données globales
+          players.delete(currentPlayer);
+          players.add(currentPlayer);
+  
+          // Notifie les autres joueurs du mouvement
+          socket.broadcast.emit("ennemy-move", {
+              id: currentPlayer.id,
+              x: currentPlayer.x,
+              y: currentPlayer.y,
+          });
+      }
+  });
+  
 
     socket.on("disconnect", () => {
         console.log("Un utilisateur est déconnecté");

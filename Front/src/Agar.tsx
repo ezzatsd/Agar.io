@@ -102,6 +102,30 @@ const Agar = () => {
   }, []);
 
   useEffect(() => {
+    socket.on("player-eaten", (data) => {
+      console.log("Joueur mangé:", data);
+      const { eaterId, eatenId, nouvelleTaille } = data;
+  
+      setPlayers((prev) => {
+        // Mettre à jour la taille du joueur mangeur
+        const updatedPlayers = prev.map((p) => {
+          if (p.id === eaterId) {
+            return { ...p, size: nouvelleTaille };
+          }
+          return p;
+        });
+  
+        // Supprimer le joueur mangé
+        return updatedPlayers.filter((p) => p.id !== eatenId);
+      });
+    });
+  
+    return () => {
+      socket.off("player-eaten");
+    };
+  }, []);
+  
+  useEffect(() => {
     socket.on("ennemy-move", (data) => {
       console.log("ennemy move", data);
       setPlayers((prev) => {
