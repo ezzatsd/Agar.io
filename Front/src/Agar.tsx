@@ -159,8 +159,8 @@ const Agar = () => {
               backgroundColor: p.color ?? "",
               top: `${p.y}px`,
               left: `${p.x}px`,
-              width: `${30+(p.size*5)}px`,  
-              height: `${30+(p.size*5)}px`,
+              width: `${30+(p.size*6)}px`,  
+              height: `${30+(p.size*6)}px`,
             }}
             ref={(el) => setRef(p.id, el)}
             key={p.id}
