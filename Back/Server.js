@@ -27,11 +27,11 @@ const players = new Set();
 
 const food = [];
 
-const MAX_FOOD = 100; // 100 nourritures maximum sur l'écran
+const MAX_FOOD = 1000; // 100 nourritures maximum sur l'écran
 
 const generateFood = () => {
-    const x = Math.random() * 1000;
-    const y = Math.random() * 1000;
+    const x = Math.random() * 3000;
+    const y = Math.random() * 3000;
     const color = colors.next().value;
     return { x, y, color };
 };
@@ -144,7 +144,7 @@ setInterval(() => {
       io.emit("food-update", { food: food });
       
   }
-}, 2000);
+}, 500);
 
 server.listen(3001, () => {
   console.log("listen on port 3001");

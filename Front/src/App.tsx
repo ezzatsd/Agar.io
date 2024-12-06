@@ -1,5 +1,4 @@
 import Agar from "./Agar";
-
 function App() {
   return <Agar />;
 }

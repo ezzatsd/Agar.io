@@ -154,7 +154,9 @@ const Agar = () => {
           return prev.map((p) => {
             if (p.id === socket.id) {
               console.log("x", e.clientX);
-              const newMe = { ...p, y: e.clientY, x: e.clientX };
+              console.log("y", e.clientY);
+              console.log("Page coordinates:X=",e.pageX, ",Y=", e.pageY);
+              const newMe = { ...p, y: e.pageY, x: e.pageX };
               meRef.current = newMe;
               socket.emit("move", newMe);
               return newMe;
@@ -172,7 +174,7 @@ const Agar = () => {
   }, []);
 
   return (
-    <div>
+    <div style={{ height: "200vh", width: "200vw"}} >
       {players.map((p) => {
         return (
           <div
